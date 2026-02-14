@@ -1,0 +1,11 @@
+flask>=3.0.0
+flask-cors>=4.0.0
+openai>=1.57.0
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+requests>=2.31.0
+gunicorn>=21.2.0
+Pillow>=10.2.0
+beautifulsoup4>=4.12.0
+azure-cosmos>=4.7.0
+pymongo>=4.6.0

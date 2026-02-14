@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustLens - Content Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1em;
+        }
+
+        textarea, input[type="text"], input[type="url"], input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .image-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .image-option {
+            flex: 1;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 12px;
+            background: #f5f5f5;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-label:hover {
+            background: #e8e8e8;
+            border-color: #667eea;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .preview-image.show {
+            display: block;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            padding: 40px;
+            background: #f9f9f9;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .result-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .verdict {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .verdict.reliable {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .verdict.questionable {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .verdict.high-risk {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .score {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .info-item strong {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .info-item span {
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .keyword {
+            background: #fff3cd;
+            color: #856404;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .explanation {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .final-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .final-result h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .final-verdict {
+            font-size: 1.5em;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 TrustLens</h1>
+            <p>Verify Content Authenticity & Detect Misinformation</p>
+        </div>
+
+        <div class="form-container">
+            <form id="analyzeForm">
+                <div class="form-group">
+                    <label for="textInput">Text to Analyze (Optional)</label>
+                    <textarea 
+                        id="textInput" 
+                        name="text" 
+                        placeholder="Enter the text content you want to verify (minimum 5 characters if provided)..."
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Image (Optional)</label>
+                    <div class="image-options">
+                        <div class="image-option">
+                            <label for="imageUrl">Image URL</label>
+                            <input 
+                                type="url" 
+                                id="imageUrl" 
+                                name="imageUrl" 
+                                placeholder="https://example.com/image.jpg"
+                            >
+                        </div>
+                        <div class="image-option">
+                            <label>Or Upload Image</label>
+                            <div class="file-upload-wrapper">
+                                <label for="imageFile" class="file-upload-label">
+                                    📷 Choose Image File
+                                </label>
+                                <input 
+                                    type="file" 
+                                    id="imageFile" 
+                                    name="imageFile" 
+                                    accept="image/*"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <img id="imagePreview" class="preview-image" alt="Preview">
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    Analyze Content
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing content...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="final-result">
+                <h2>Final Verdict</h2>
+                <div class="score" id="finalScore">-</div>
+                <div class="final-verdict" id="finalVerdict">-</div>
+            </div>
+
+            <div class="result-section" id="textSection">
+                <h3>📝 Text Analysis</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Risk Level</strong>
+                        <span id="textRiskLevel">-</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Credibility Score</strong>
+                        <span id="textCredibilityScore">-</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Verdict</strong>
+                        <span id="textVerdict">-</span>
+                    </div>
+                </div>
+                <div id="textKeywords" class="keywords"></div>
+                <div id="textExplanation" class="explanation" style="display: none;"></div>
+            </div>
+
+            <div class="result-section" id="imageSection" style="display: none;">
+                <h3>🖼️ Image Analysis</h3>
+                <div id="imageAnalysisContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api/analyze';
+        let imageDataUrl = null;
+
+        // Handle image file upload
+        document.getElementById('imageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imageDataUrl = event.target.result;
+                    document.getElementById('imagePreview').src = imageDataUrl;
+                    document.getElementById('imagePreview').classList.add('show');
+                    // Clear URL input when file is selected
+                    document.getElementById('imageUrl').value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle URL input
+        document.getElementById('imageUrl').addEventListener('input', function(e) {
+            if (e.target.value) {
+                // Clear file input when URL is entered
+                document.getElementById('imageFile').value = '';
+                imageDataUrl = null;
+                document.getElementById('imagePreview').src = e.target.value;
+                document.getElementById('imagePreview').classList.add('show');
+            } else {
+                document.getElementById('imagePreview').classList.remove('show');
+            }
+        });
+
+        // Form submission
+        document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const text = document.getElementById('textInput').value.trim();
+            const imageUrl = document.getElementById('imageUrl').value.trim();
+            const imageFile = document.getElementById('imageFile').files[0];
+
+            // Validation: Either text or image must be provided
+            if (!text && !imageUrl && !imageFile) {
+                showError('Please provide either text content or an image for analysis.');
+                return;
+            }
+
+            // If text is provided, it must be at least 5 characters
+            if (text && text.length < 5) {
+                showError('Text must be at least 5 characters long.');
+                return;
+            }
+
+            // Hide previous results and errors
+            document.getElementById('results').classList.remove('show');
+            document.getElementById('error').classList.remove('show');
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('submitBtn').disabled = true;
+
+            try {
+                // Prepare request body
+                const requestBody = {};
+                if (text) requestBody.text = text;
+                
+                // Add image URL if provided
+                if (imageUrl) {
+                    requestBody.imageUrl = imageUrl;
+                } else if (imageDataUrl) {
+                    // For file uploads, we need to convert to a URL
+                    // In a real app, you'd upload to a server first
+                    // For now, we'll use data URL (note: backend may not support this)
+                    // Better to use a service or just use URL input
+                    showError('Please use an image URL instead of file upload, or upload the image to a hosting service first.');
+                    document.getElementById('loading').classList.remove('show');
+                    document.getElementById('submitBtn').disabled = false;
+                    return;
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Analysis failed');
+                }
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    throw new Error(data.message || 'Analysis failed');
+                }
+            } catch (error) {
+                showError(error.message || 'An error occurred while analyzing the content.');
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            results.classList.add('show');
+
+            // Final Result
+            document.getElementById('finalScore').textContent = data.finalResult.finalScore + '/100';
+            const finalVerdict = data.finalResult.finalVerdict.toLowerCase().replace(' ', '-');
+            document.getElementById('finalVerdict').textContent = data.finalResult.finalVerdict;
+            document.getElementById('finalVerdict').className = 'final-verdict ' + finalVerdict;
+
+            // Text Analysis
+            const textSection = document.getElementById('textSection');
+            if (data.textAnalysis.status === 'skipped') {
+                textSection.style.display = 'none';
+            } else {
+                textSection.style.display = 'block';
+                document.getElementById('textRiskLevel').textContent = data.textAnalysis.riskLevel.toUpperCase();
+                document.getElementById('textCredibilityScore').textContent = data.textAnalysis.credibilityScore + '/100';
+                
+                const textVerdictEl = document.getElementById('textVerdict');
+                textVerdictEl.textContent = data.textAnalysis.verdict;
+                textVerdictEl.className = 'verdict ' + data.textAnalysis.verdict.toLowerCase().replace(' ', '-');
+
+                // Keywords
+                const keywordsDiv = document.getElementById('textKeywords');
+                if (data.textAnalysis.riskKeywordsFound && data.textAnalysis.riskKeywordsFound.length > 0) {
+                    keywordsDiv.innerHTML = '<strong>Risk Keywords Found:</strong> ' + 
+                        data.textAnalysis.riskKeywordsFound.map(k => 
+                            `<span class="keyword">${k}</span>`
+                        ).join('');
+                } else {
+                    keywordsDiv.innerHTML = '<span style="color: #28a745;">✓ No risk keywords found</span>';
+                }
+
+                // Explanation (if available from LLM)
+                const explanationDiv = document.getElementById('textExplanation');
+                if (data.textAnalysis.explanation) {
+                    explanationDiv.innerHTML = '<strong>AI Explanation:</strong><br>' + data.textAnalysis.explanation;
+                    explanationDiv.style.display = 'block';
+                } else {
+                    explanationDiv.style.display = 'none';
+                }
+            }
+
+            // Image Analysis
+            const imageSection = document.getElementById('imageSection');
+            const imageContent = document.getElementById('imageAnalysisContent');
+            
+            if (data.imageAnalysis.status === 'processed') {
+                imageSection.style.display = 'block';
+                
+                let llmHtml = '';
+                if (data.imageAnalysis.llmAnalysis) {
+                    const llm = data.imageAnalysis.llmAnalysis;
+                    llmHtml = `
+                        <div class="explanation" style="margin-top: 15px; border-left-color: #764ba2; background-color: #f3ebff;">
+                            <strong>AI Visual Analysis:</strong><br>
+                            ${llm.explanation}
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <strong>Visual Red Flags:</strong>
+                            <div class="keywords">
+                                ${llm.visualRedFlags && llm.visualRedFlags.length > 0 
+                                    ? llm.visualRedFlags.map(f => `<span class="keyword" style="background: #f8d7da; color: #721c24;">${f}</span>`).join('') 
+                                    : '<span style="color: #28a745;">✓ No visual red flags detected by AI</span>'}
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <strong>AI Generation Probability:</strong> ${llm.aiGeneratedProbability}%
+                        </div>
+                    `;
+                }
+
+                imageContent.innerHTML = `
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Credibility Score</strong>
+                            <span>${data.imageAnalysis.credibilityScore}/100</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Verdict</strong>
+                            <span class="verdict ${data.imageAnalysis.verdict.toLowerCase().replace(' ', '-')}">${data.imageAnalysis.verdict}</span>
+                        </div>
+                    </div>
+                    ${llmHtml}
+                    <div style="margin-top: 20px;">
+                        <details>
+                            <summary style="cursor: pointer; color: #666; font-size: 0.9em;">Technical Details (Metadata & Tracing)</summary>
+                            <div style="margin-top: 10px;">
+                                ${data.imageAnalysis.metadata ? '<div><strong>Metadata:</strong><pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 0.8em;">' + JSON.stringify(data.imageAnalysis.metadata, null, 2) + '</pre></div>' : ''}
+                                ${data.imageAnalysis.tracing ? '<div style="margin-top: 10px;"><strong>Tracing Results:</strong><pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 0.8em;">' + JSON.stringify(data.imageAnalysis.tracing, null, 2) + '</pre></div>' : ''}
+                            </div>
+                        </details>
+                    </div>
+                `;
+            } else {
+                imageSection.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

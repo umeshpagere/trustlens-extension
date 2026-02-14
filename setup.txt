@@ -1,0 +1,30 @@
+# TrustLens Project Setup Prompt
+
+To set up the TrustLens project, please follow these steps:
+
+1. **Initialize Virtual Environment**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+3. **Configure Environment Variables**:
+   Copy the example environment file and fill in your credentials:
+   ```bash
+   cp .env.example .env
+   ```
+   *Edit `.env` and provide your Azure OpenAI and MongoDB details if available.*
+
+4. **Run the Application**:
+   ```bash
+   python run.py
+   ```
+
+5. **Verify Setup**:
+   Check if the API is running by visiting: `http://localhost:5000/api/health`
